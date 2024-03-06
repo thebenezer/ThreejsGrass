@@ -203,39 +203,42 @@ export class GrassMaterial {
                 vec3 grassFinalColor = diffuseColor.rgb * uGrassLightIntensity;
                 
                 // shadow map
-                // GeometricContext geometry;
-                //   IncidentLight directLight;
-                //   float shadow = 0.0;
-                //   float currentShadow = 0.0;
-                //   float NdotL;
-                //   if(uEnableShadows == 1){
-                //     #if ( NUM_DIR_LIGHTS > 0) 
-                //       DirectionalLight directionalLight;
-                //     #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
-                //       DirectionalLightShadow directionalLightShadow;
-                //     #endif
-                //       #pragma unroll_loop_start
-                //       for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
-                //         directionalLight = directionalLights[ i ];
-                //         getDirectionalLightInfo( directionalLight, geometry, directLight );
-                //         directionalLightShadow = directionalLightShadows[ i ];
-                //         currentShadow = getShadow( directionalShadowMap[ i ], 
-                //           directionalLightShadow.shadowMapSize, 
-                //           directionalLightShadow.shadowBias, 
-                //           directionalLightShadow.shadowRadius, 
-                //           vDirectionalShadowCoord[ i ] );
-                //         currentShadow = all( bvec2( directLight.visible, receiveShadow ) ) ? currentShadow : 1.0;
-                //         float weight = clamp( pow( length( vDirectionalShadowCoord[ i ].xy * 2. - 1. ), 4. ), .0, 1. );
+                vec3 geometryPosition = - vViewPosition;
+                vec3 geometryNormal = vNormal;
+                vec3 geometryViewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( vViewPosition );
+                vec3 geometryClearcoatNormal;
+                  IncidentLight directLight;
+                  float shadow = 0.0;
+                  float currentShadow = 0.0;
+                  float NdotL;
+                  if(uEnableShadows == 1){
+                    #if ( NUM_DIR_LIGHTS > 0) 
+                      DirectionalLight directionalLight;
+                    #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+                      DirectionalLightShadow directionalLightShadow;
+                    #endif
+                      #pragma unroll_loop_start
+                      for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+                        directionalLight = directionalLights[ i ];
+                        getDirectionalLightInfo( directionalLight, directLight );
+                        directionalLightShadow = directionalLightShadows[ i ];
+                        currentShadow = getShadow( directionalShadowMap[ i ], 
+                          directionalLightShadow.shadowMapSize, 
+                          directionalLightShadow.shadowBias, 
+                          directionalLightShadow.shadowRadius, 
+                          vDirectionalShadowCoord[ i ] );
+                        currentShadow = all( bvec2( directLight.visible, receiveShadow ) ) ? currentShadow : 1.0;
+                        float weight = clamp( pow( length( vDirectionalShadowCoord[ i ].xy * 2. - 1. ), 4. ), .0, 1. );
 
-                //         shadow += mix( currentShadow, 1., weight);
-                //       }
-                //       #pragma unroll_loop_end
-                //     #endif
-                //     grassFinalColor = mix(grassFinalColor , grassFinalColor * uShadowDarkness,  1.-shadow) ;
-                //   } else{
-                //     grassFinalColor = grassFinalColor ;
-                //   }
-                // diffuseColor.rgb = clamp(diffuseColor.rgb*shadow,0.0,1.0);
+                        shadow += mix( currentShadow, 1., weight);
+                      }
+                      #pragma unroll_loop_end
+                    #endif
+                    grassFinalColor = mix(grassFinalColor , grassFinalColor * uShadowDarkness,  1.-shadow) ;
+                  } else{
+                    grassFinalColor = grassFinalColor ;
+                  }
+                diffuseColor.rgb = clamp(diffuseColor.rgb*shadow,0.0,1.0);
 
                 #include <alphatest_fragment>
                 gl_FragColor = vec4(grassFinalColor ,1.0);
