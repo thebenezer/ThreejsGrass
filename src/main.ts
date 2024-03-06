@@ -199,7 +199,7 @@ export class FluffyGrass {
 				terrainMat.color.set(value);
 			});
 
-		this.gltfLoader.load("/Island.glb", (gltf) => {
+		this.gltfLoader.load("/island.glb", (gltf) => {
 			let terrainMesh: THREE.Mesh;
 			gltf.scene.traverse((child) => {
 				if (child instanceof THREE.Mesh) {
