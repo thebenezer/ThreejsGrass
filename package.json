@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "dat.gui": "^0.7.9",
+    "stats-gl": "^2.0.1",
     "three": "^0.159.0"
   }
 }
