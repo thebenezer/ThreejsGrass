@@ -122,7 +122,7 @@ export class GrassMaterial {
                 float uWindAmp = 0.3;
                 float uWindFreq = 10.;
                 float uSpeed = 1.0;
-                float uNoiseFactor = 5.0;
+                float uNoiseFactor = 0.50;
                 float uNoiseSpeed = 0.001;
         
                 vec2 windDirection = normalize(uWindDirection); // Normalize the wind direction
@@ -244,8 +244,7 @@ export class GrassMaterial {
                 gl_FragColor = vec4(grassFinalColor ,1.0);
 
                 // vec3 windColorViz = vec3((vWindColor.x+vWindColor.y)/2.);
-                // vec4 noise = texture2D(uGrassAlphaTexture,mod(vGlobalUV+uTime*0.1,1.));
-                // gl_FragColor = vec4(noise.rgb,1.0);
+                // gl_FragColor = vec4(windColorViz,1.0);
                 
                 #include <tonemapping_fragment>
 					      #include <colorspace_fragment>
