@@ -34,6 +34,7 @@ export class FluffyGrass {
 	};
 	private clock = new THREE.Clock();
 
+	private terrainMat: THREE.MeshPhongMaterial;
 	private grassGeometry = new THREE.BufferGeometry();
 	private grassMaterial: GrassMaterial;
 	private grassCount = 8000;
@@ -88,6 +89,9 @@ export class FluffyGrass {
 		this.orbitControls.enableDamping = true;
 
 		this.grassMaterial = new GrassMaterial();
+		this.terrainMat = new THREE.MeshPhongMaterial({
+			color: this.sceneProps.terrainColor,
+		});
 
 		this.init();
 	}
@@ -179,20 +183,16 @@ export class FluffyGrass {
 	}
 
 	private loadModels() {
-		const terrainMat = new THREE.MeshPhongMaterial({
-			color: this.sceneProps.terrainColor,
-		});
-
 		this.sceneGUI
 			.addColor(this.sceneProps, "terrainColor")
 			.onChange((value) => {
-				terrainMat.color.set(value);
+				this.terrainMat.color.set(value);
 			});
 		this.gltfLoader.load("/island.glb", (gltf) => {
 			let terrainMesh: THREE.Mesh;
 			gltf.scene.traverse((child) => {
 				if (child instanceof THREE.Mesh) {
-					child.material = terrainMat;
+					child.material = this.terrainMat;
 					child.receiveShadow = true;
 					child.geometry.scale(3, 3, 3);
 					terrainMesh = child;
@@ -298,6 +298,13 @@ export class FluffyGrass {
 		this.stats.dom.addEventListener("click", () => {
 			console.log(this.renderer.info.render);
 		});
+
+		const randomizeGrassColor = document.querySelector(
+			".randomizeButton"
+		) as HTMLButtonElement;
+		randomizeGrassColor.addEventListener("click", () => {
+			this.randomizeGrassColor();
+		});
 	}
 
 	private setAspectResolution() {
@@ -309,6 +316,30 @@ export class FluffyGrass {
 		// 	window.innerWidth,
 		// 	window.innerHeight,
 		// );
+	}
+
+	private randomizeGrassColor() {
+		const randomTipColorGenerator = () => {
+			const r = Math.random();
+			const g = Math.random();
+			const b = Math.random();
+			return new THREE.Color(r, g, b);
+		};
+		const randomColorGenerator = () => {
+			// generate random color and keep it dark
+			const r = Math.random() * 0.5;
+			const g = Math.random() * 0.5;
+			const b = Math.random() * 0.5;
+			return new THREE.Color(r, g, b);
+		};
+		// find new terrain color, grass base and tip1,tip2 colors randomly
+		const terrainColor = randomColorGenerator();
+		const grassTip1Color = randomTipColorGenerator();
+		const grassTip2Color = randomTipColorGenerator();
+		this.terrainMat.color = terrainColor;
+		this.grassMaterial.uniforms.baseColor.value = terrainColor;
+		this.grassMaterial.uniforms.tipColor1.value = grassTip1Color;
+		this.grassMaterial.uniforms.tipColor2.value = grassTip2Color;
 	}
 }
 
