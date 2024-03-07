@@ -24,7 +24,7 @@ export class FluffyGrass {
 	private sceneProps = {
 		fogColor: "#eeeeee",
 		terrainColor: "#589b5e",
-		fogDensity: 0.03,
+		fogDensity: 0.02,
 	};
 	private textures: { [key: string]: THREE.Texture } = {};
 
@@ -36,16 +36,13 @@ export class FluffyGrass {
 
 	private grassGeometry = new THREE.BufferGeometry();
 	private grassMaterial: GrassMaterial;
-	private grassCount = 5000;
+	private grassCount = 8000;
 
 	constructor(_canvas: HTMLCanvasElement) {
 		this.loadingManager = new THREE.LoadingManager();
 		this.textureLoader = new THREE.TextureLoader(this.loadingManager);
 
 		this.gui = new dat.GUI();
-		this.setupGUI();
-		this.sceneGUI = this.gui.addFolder("Scene Properties");
-		this.sceneGUI.open();
 
 		this.gltfLoader = new GLTFLoader(this.loadingManager);
 
@@ -61,7 +58,7 @@ export class FluffyGrass {
 			0.1,
 			1000
 		);
-		this.camera.position.set(20, 20, 20);
+		this.camera.position.set(-15, 15, 0);
 		this.scene = new THREE.Scene();
 
 		this.scene.background = new THREE.Color(this.sceneProps.fogColor);
@@ -69,16 +66,6 @@ export class FluffyGrass {
 			this.sceneProps.fogColor,
 			this.sceneProps.fogDensity
 		);
-
-		this.sceneGUI
-			.add(this.sceneProps, "fogDensity", 0, 0.01, 0.000001)
-			.onChange((value) => {
-				(this.scene.fog as THREE.FogExp2).density = value;
-			});
-		this.sceneGUI.addColor(this.sceneProps, "fogColor").onChange((value) => {
-			this.scene.fog?.color.set(value);
-			this.scene.background = new THREE.Color(value);
-		});
 
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.canvas,
@@ -104,9 +91,10 @@ export class FluffyGrass {
 	}
 
 	private init() {
+		this.setupGUI();
 		this.setupStats();
 		this.setupTextures();
-		this.createCube();
+		// this.createCube();
 		this.loadModels();
 		this.setupEventListeners();
 		this.addLights();
@@ -116,7 +104,7 @@ export class FluffyGrass {
 		const geometry = new THREE.BoxGeometry(2, 7, 2);
 		const material = new THREE.MeshPhongMaterial({ color: 0x333333 });
 		const cube = new THREE.Mesh(geometry, material);
-		cube.position.set(0, 5, 0);
+		cube.position.set(6, 5, -3);
 		cube.castShadow = true;
 		this.scene.add(cube);
 	}
@@ -190,7 +178,7 @@ export class FluffyGrass {
 
 	private loadModels() {
 		const terrainMat = new THREE.MeshPhongMaterial({
-			color: 0x77bb44,
+			color: 0x5e8487,
 		});
 
 		this.sceneGUI
@@ -198,14 +186,13 @@ export class FluffyGrass {
 			.onChange((value) => {
 				terrainMat.color.set(value);
 			});
-
 		this.gltfLoader.load("/island.glb", (gltf) => {
 			let terrainMesh: THREE.Mesh;
 			gltf.scene.traverse((child) => {
 				if (child instanceof THREE.Mesh) {
 					child.material = terrainMat;
 					child.receiveShadow = true;
-					child.geometry.scale(3, 2.5, 3);
+					child.geometry.scale(3, 3, 3);
 					terrainMesh = child;
 				}
 			});
@@ -224,6 +211,21 @@ export class FluffyGrass {
 
 				this.addGrass(terrainMesh, this.grassGeometry);
 			});
+		});
+
+		const material = new THREE.MeshPhongMaterial({ color: 0x333333 });
+
+		this.gltfLoader.load("/fluffy_grass_text.glb", (gltf) => {
+			gltf.scene.traverse((child) => {
+				if (child instanceof THREE.Mesh) {
+					child.material = material;
+					child.geometry.scale(3, 3, 3);
+					child.position.y += 0.5;
+					child.castShadow = true;
+					child.receiveShadow = true;
+				}
+			});
+			this.scene.add(gltf.scene);
 		});
 	}
 
@@ -261,6 +263,21 @@ export class FluffyGrass {
 		guiContainer.style.left = "0";
 		guiContainer.style.right = "auto";
 		guiContainer.style.display = "block";
+
+		this.sceneGUI = this.gui.addFolder("Scene Properties");
+		this.sceneGUI
+			.add(this.sceneProps, "fogDensity", 0, 0.01, 0.000001)
+			.onChange((value) => {
+				(this.scene.fog as THREE.FogExp2).density = value;
+			});
+		this.sceneGUI.addColor(this.sceneProps, "fogColor").onChange((value) => {
+			this.scene.fog?.color.set(value);
+			this.scene.background = new THREE.Color(value);
+		});
+
+		this.grassMaterial.setupGUI(this.sceneGUI);
+
+		this.sceneGUI.open();
 	}
 
 	private setupStats() {
