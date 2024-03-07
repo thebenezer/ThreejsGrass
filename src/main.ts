@@ -23,7 +23,7 @@ export class FluffyGrass {
 	private sceneGUI: dat.GUI;
 	private sceneProps = {
 		fogColor: "#eeeeee",
-		terrainColor: "#589b5e",
+		terrainColor: "#5e875e",
 		fogDensity: 0.02,
 	};
 	private textures: { [key: string]: THREE.Texture } = {};
@@ -58,7 +58,7 @@ export class FluffyGrass {
 			0.1,
 			1000
 		);
-		this.camera.position.set(-15, 15, 0);
+		this.camera.position.set(-17, 12, -10);
 		this.scene = new THREE.Scene();
 
 		this.scene.background = new THREE.Color(this.sceneProps.fogColor);
@@ -83,6 +83,8 @@ export class FluffyGrass {
 		this.scene.frustumCulled = true;
 
 		this.orbitControls = new OrbitControls(this.camera, canvas);
+		this.orbitControls.autoRotate = true;
+		this.orbitControls.autoRotateSpeed = -0.5;
 		this.orbitControls.enableDamping = true;
 
 		this.grassMaterial = new GrassMaterial();
@@ -178,7 +180,7 @@ export class FluffyGrass {
 
 	private loadModels() {
 		const terrainMat = new THREE.MeshPhongMaterial({
-			color: 0x5e8487,
+			color: this.sceneProps.terrainColor,
 		});
 
 		this.sceneGUI
@@ -247,11 +249,10 @@ export class FluffyGrass {
 
 		this.textures.grassAlpha = this.textureLoader.load("/grass.jpeg");
 
-		this.grassMaterial.uniforms.noiseTexture.value = this.textures.perlinNoise;
-		this.grassMaterial.uniforms.perlinNoiseTexture.value =
-			this.textures.perlinNoise;
-		this.grassMaterial.uniforms.grassAlphaTexture.value =
-			this.textures.grassAlpha;
+		this.grassMaterial.setupTextures(
+			this.textures.grassAlpha,
+			this.textures.perlinNoise
+		);
 	}
 
 	private setupGUI() {
@@ -265,8 +266,9 @@ export class FluffyGrass {
 		guiContainer.style.display = "block";
 
 		this.sceneGUI = this.gui.addFolder("Scene Properties");
+		this.sceneGUI.add(this.orbitControls, "autoRotate").name("Auto Rotate");
 		this.sceneGUI
-			.add(this.sceneProps, "fogDensity", 0, 0.01, 0.000001)
+			.add(this.sceneProps, "fogDensity", 0, 0.05, 0.000001)
 			.onChange((value) => {
 				(this.scene.fog as THREE.FogExp2).density = value;
 			});
@@ -286,7 +288,7 @@ export class FluffyGrass {
 		this.stats.dom.style.top = "auto";
 		this.stats.dom.style.left = "auto";
 		// this.stats.dom.style.right = "0";
-		// this.stats.dom.style.display = "block";
+		this.stats.dom.style.display = "none";
 		document.body.appendChild(this.stats.dom);
 	}
 

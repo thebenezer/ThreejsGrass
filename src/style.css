@@ -50,17 +50,18 @@ nav a img{
   top: 0;
   right: 0;
   padding: 20px;
-  color: #fff;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 100;
   z-index: 100;
 }
 .credits a{
-  color: #979797;
+  color: #5b5b5b;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 .credits a:hover{
+  color: #718f74;
   opacity: 0.7;
   transform: scale(1.2);
 }

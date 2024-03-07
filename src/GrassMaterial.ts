@@ -2,19 +2,27 @@ import { GUI } from "dat.gui";
 import * as THREE from "three";
 
 interface GrassUniformsInterface {
-	width?: number;
-	height?: number;
-	maxHeight?: number;
-	maxExpo?: number;
-	numberOfChunks?: number;
+	uTime?: { value: number };
+	uEnableShadows?: { value: boolean };
+	uShadowDarkness?: { value: number };
+	uGrassLightIntensity?: { value: number };
+	uNoiseScale?: { value: number };
+	uPlayerPosition?: { value: THREE.Vector3 };
+	baseColor?: { value: THREE.Color };
+	tipColor1?: { value: THREE.Color };
+	tipColor2?: { value: THREE.Color };
+	noiseTexture?: { value: THREE.Texture };
+	grassAlphaTexture?: { value: THREE.Texture };
+	fogColor2?: { value: THREE.Color };
+	fogColor3?: { value: THREE.Color };
 }
 export class GrassMaterial {
 	material: THREE.Material;
 
 	private grassColorProps = {
-		baseColor: 0x1b3f1b,
-		tipColor1: 0xff5ff,
-		tipColor2: 0xff55af,
+		baseColor: "#313f1b",
+		tipColor1: "#9bd38d",
+		tipColor2: "#1f352a",
 	};
 
 	uniforms: { [key: string]: { value: any } } = {
@@ -22,14 +30,13 @@ export class GrassMaterial {
 		uEnableShadows: { value: true },
 		uShadowDarkness: { value: 0.5 },
 		uGrassLightIntensity: { value: 1 },
-		uNoiseScale: { value: 0.5 },
+		uNoiseScale: { value: 1.5 },
 		uPlayerPosition: { value: new THREE.Vector3() },
 		baseColor: { value: new THREE.Color(this.grassColorProps.baseColor) },
 		tipColor1: { value: new THREE.Color(this.grassColorProps.tipColor1) },
 		tipColor2: { value: new THREE.Color(this.grassColorProps.tipColor2) },
 		noiseTexture: { value: new THREE.Texture() },
 		grassAlphaTexture: { value: new THREE.Texture() },
-		perlinNoiseTexture: { value: new THREE.Texture() },
 	};
 
 	private mergeUniforms(newUniforms?: GrassUniformsInterface) {
@@ -79,7 +86,6 @@ export class GrassMaterial {
 				uNoiseScale: this.uniforms.uNoiseScale,
 				uNoiseTexture: this.uniforms.noiseTexture,
 				uGrassAlphaTexture: this.uniforms.grassAlphaTexture,
-				uPerlinNoiseTexture: this.uniforms.perlinNoiseTexture,
 				fogColor2: this.uniforms.fogColor2,
 				fogColor3: this.uniforms.fogColor3,
 			};
@@ -160,18 +166,17 @@ export class GrassMaterial {
       // FOG
       #include <fog_pars_fragment>
       // FOG
+
       #include <common>
       #include <packing>
       #include <lights_pars_begin>
       #include <shadowmap_pars_fragment>
       #include <shadowmask_pars_fragment>
       
-      
       uniform float uTime;
       uniform vec3 uBaseColor;
       uniform vec3 uTipColor1;
       uniform vec3 uTipColor2;
-      uniform float opacity;
       uniform sampler2D uGrassAlphaTexture;
       uniform sampler2D uNoiseTexture;
       uniform float uNoiseScale;
@@ -198,7 +203,7 @@ export class GrassMaterial {
         vec3 grassFinalColor = diffuseColor.rgb * uGrassLightIntensity;
         
         // light calculation derived from <lights_fragment_begin>
-        vec3 geometryPosition = - vViewPosition;
+        vec3 geometryPosition = vViewPosition;
         vec3 geometryNormal = vNormal;
         vec3 geometryViewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( vViewPosition );
         vec3 geometryClearcoatNormal;
@@ -255,6 +260,11 @@ export class GrassMaterial {
 		};
 	}
 
+	setupTextures(grassAlphaTexture: THREE.Texture, noiseTexture: THREE.Texture) {
+		this.uniforms.grassAlphaTexture.value = grassAlphaTexture;
+		this.uniforms.noiseTexture.value = noiseTexture;
+	}
+
 	setupGUI(gui: GUI) {
 		const folder = gui.addFolder("Grass Props");
 		folder.addColor(this.grassColorProps, "baseColor").onChange((value) => {
@@ -279,4 +289,18 @@ export class GrassMaterial {
 	}
 }
 
-// ************** USAGE *********************
+// ************** USAGE **************
+/*
+import { GrassMaterial } from "./GrassMaterial";
+
+// in your main class
+const grassMaterial: GrassMaterial;
+// in your setup function
+grassMaterial = new GrassMaterial();
+// after loading the textures
+grassMaterial.setupTextures(this.textures.grassAlpha, this.textures.perlinNoise);
+// in your render function
+uTime += this.clock.getDelta();
+grassMaterial.update(uTime);
+
+*/
