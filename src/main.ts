@@ -299,12 +299,12 @@ export class FluffyGrass {
 			console.log(this.renderer.info.render);
 		});
 
-		const randomizeGrassColor = document.querySelector(
-			".randomizeButton"
-		) as HTMLButtonElement;
-		randomizeGrassColor.addEventListener("click", () => {
-			this.randomizeGrassColor();
-		});
+		// const randomizeGrassColor = document.querySelector(
+		// 	".randomizeButton"
+		// ) as HTMLButtonElement;
+		// randomizeGrassColor.addEventListener("click", () => {
+		// 	this.randomizeGrassColor();
+		// });
 	}
 
 	private setAspectResolution() {
