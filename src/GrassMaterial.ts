@@ -37,6 +37,8 @@ export class GrassMaterial {
 		tipColor2: { value: new THREE.Color(this.grassColorProps.tipColor2) },
 		noiseTexture: { value: new THREE.Texture() },
 		grassAlphaTexture: { value: new THREE.Texture() },
+		showWind: { value: 0 },
+		uNoiseFactor: { value: 0.0 },
 	};
 
 	private mergeUniforms(newUniforms?: GrassUniformsInterface) {
@@ -88,6 +90,8 @@ export class GrassMaterial {
 				uGrassAlphaTexture: this.uniforms.grassAlphaTexture,
 				fogColor2: this.uniforms.fogColor2,
 				fogColor3: this.uniforms.fogColor3,
+				showWind: this.uniforms.showWind,
+				uNoiseFactor: this.uniforms.uNoiseFactor,
 			};
 
 			shader.vertexShader = `
@@ -99,6 +103,7 @@ export class GrassMaterial {
       uniform sampler2D uNoiseTexture;
       uniform float uNoiseScale;
       uniform float uTime;
+      uniform float uNoiseFactor;
       
       varying vec3 vColor;
       varying vec2 vGlobalUV;
@@ -127,7 +132,6 @@ export class GrassMaterial {
         float uWindAmp = 0.1;
         float uWindFreq = 50.;
         float uSpeed = 1.0;
-        float uNoiseFactor = 5.50;
         float uNoiseSpeed = 0.001;
 
         vec2 windDirection = normalize(uWindDirection); // Normalize the wind direction
@@ -185,6 +189,7 @@ export class GrassMaterial {
       uniform float uGrassLightIntensity;
       uniform float uShadowDarkness;
       uniform float uDayTime;
+      uniform float showWind;
       varying vec3 vColor;
       
       varying vec2 vUv;
@@ -244,8 +249,8 @@ export class GrassMaterial {
         gl_FragColor = vec4(grassFinalColor ,1.0);
 
         // uncomment to visualize wind
-        // vec3 windColorViz = vec3((vWindColor.x+vWindColor.y)/2.);
-        // gl_FragColor = vec4(windColorViz,1.0);
+        vec3 windColorViz = vec3((vWindColor.x+vWindColor.y)/2.);
+        gl_FragColor = vec4(mix(windColorViz,grassFinalColor,showWind),1.0);
         
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

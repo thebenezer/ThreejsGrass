@@ -242,7 +242,7 @@ export class FluffyGrass {
 				this.camera.position.set(-2, 3.5, 2);
 				this.orbitControls.target = new THREE.Vector3(0, 2, 0);
 
-				this.scene.add(this.initialGrassMesh);
+				this.scene.add(gltf.scene);
 				this.addGrass(terrainMesh, this.grassGeometry);
 			});
 		});
@@ -342,32 +342,43 @@ export class FluffyGrass {
 					duration: 2,
 					ease: "power4.out",
 				});
-				const col = new THREE.Color("#9bd38d");
+				this.grassMaterial.uniforms.showWind.value = 1;
+				this.moveGrass();
+			} else if (click === 1) {
+				const tl = gsap.timeline();
+				tl.to(this.grassMaterial.uniforms.showWind, {
+					value: 0,
+					duration: 2,
+					ease: "power4.out",
+				});
+				tl.to(this.grassMaterial.uniforms.noiseFactor, {
+					value: 5.5,
+					duration: 2,
+					ease: "power4.out",
+				});
+			} else if (click === 2) {
+				const col = new THREE.Color("#1f352a");
+				const tl = gsap.timeline();
+				tl.to(this.grassMaterial.uniforms.showWind, {
+					value: 1,
+					duration: 1,
+					ease: "power4.out",
+				});
 				tl.to(
-					this.terrainMat.color,
+					this.grassMaterial.uniforms.tipColor2.value,
 					{
 						r: col.r,
 						g: col.g,
 						b: col.b,
 						duration: 2,
 						ease: "power4.out",
+						// onUpdate: (progress) => {
+						// 	this.grassMaterial.uniforms.tipColor1.value.lerp(col, progress);
+						// },
 					},
 					0
 				);
-				this.moveGrass();
-			} else if (click === 1) {
-				const col = new THREE.Color("#1f352a");
-				gsap.to(this.grassMaterial.uniforms.tipColor2.value, {
-					r: col.r,
-					g: col.g,
-					b: col.b,
-					duration: 2,
-					ease: "power4.out",
-					// onUpdate: (progress) => {
-					// 	this.grassMaterial.uniforms.tipColor1.value.lerp(col, progress);
-					// },
-				});
-			} else if (click === 2) {
+			} else if (click === 3) {
 				const col = new THREE.Color("#313f1b");
 				const tl = gsap.timeline();
 				tl.to(this.grassMaterial.uniforms.baseColor.value, {
