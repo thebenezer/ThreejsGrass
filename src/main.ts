@@ -6,7 +6,7 @@ import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 import { GrassMaterial } from "./GrassMaterial";
-
+import gsap from "gsap";
 export class FluffyGrass {
 	// # Need access to these outside the comp
 	private loadingManager: THREE.LoadingManager;
@@ -23,7 +23,8 @@ export class FluffyGrass {
 	private sceneGUI: dat.GUI;
 	private sceneProps = {
 		fogColor: "#eeeeee",
-		terrainColor: "#5e875e",
+		// terrainColor: "#5e875e",
+		terrainColor: "#dddddd",
 		fogDensity: 0.02,
 	};
 	private textures: { [key: string]: THREE.Texture } = {};
@@ -38,6 +39,9 @@ export class FluffyGrass {
 	private grassGeometry = new THREE.BufferGeometry();
 	private grassMaterial: GrassMaterial;
 	private grassCount = 8000;
+	private grassTransforms: THREE.Matrix4[] = [];
+	private grassInstancedMesh: THREE.InstancedMesh;
+	private initialGrassMesh: THREE.Mesh;
 
 	constructor(_canvas: HTMLCanvasElement) {
 		this.loadingManager = new THREE.LoadingManager();
@@ -59,7 +63,7 @@ export class FluffyGrass {
 			0.1,
 			1000
 		);
-		this.camera.position.set(-17, 12, -10);
+		// this.camera.position.set(-17, 12, -10);
 		this.scene = new THREE.Scene();
 
 		this.scene.background = new THREE.Color(this.sceneProps.fogColor);
@@ -85,7 +89,7 @@ export class FluffyGrass {
 
 		this.orbitControls = new OrbitControls(this.camera, canvas);
 		this.orbitControls.autoRotate = true;
-		this.orbitControls.autoRotateSpeed = -0.5;
+		this.orbitControls.autoRotateSpeed = -1.5;
 		this.orbitControls.enableDamping = true;
 
 		this.grassMaterial = new GrassMaterial();
@@ -142,12 +146,12 @@ export class FluffyGrass {
 			.build();
 
 		// Create a material for grass
-		const grassInstancedMesh = new THREE.InstancedMesh(
+		this.grassInstancedMesh = new THREE.InstancedMesh(
 			grassGeometry,
 			this.grassMaterial.material,
 			this.grassCount
 		);
-		grassInstancedMesh.receiveShadow = true;
+		this.grassInstancedMesh.receiveShadow = true;
 
 		const position = new THREE.Vector3();
 		const quaternion = new THREE.Quaternion();
@@ -175,11 +179,24 @@ export class FluffyGrass {
 
 			// Set the new scale in the matrix
 			matrix.compose(position, quaternion, scale);
+			this.grassTransforms.push(matrix.clone());
+			matrix.setPosition(0, 0, 0);
 
-			grassInstancedMesh.setMatrixAt(i, matrix);
+			this.grassInstancedMesh.setMatrixAt(i, matrix);
 		}
 
-		this.scene.add(grassInstancedMesh);
+		this.scene.add(this.grassInstancedMesh);
+	}
+
+	private moveGrass() {
+		// Sample randomly from the surface, creating an instance of the sample
+		// geometry at each sample point.
+		for (let i = 0; i < this.grassCount; i++) {
+			setTimeout(() => {
+				this.grassInstancedMesh.setMatrixAt(i, this.grassTransforms[i]);
+				this.grassInstancedMesh.instanceMatrix.needsUpdate = true;
+			}, i / 2);
+		}
 	}
 
 	private loadModels() {
@@ -207,10 +224,25 @@ export class FluffyGrass {
 						if (child.name.includes("LOD00")) {
 							child.geometry.scale(5, 5, 5);
 							this.grassGeometry = child.geometry;
+							child.geometry.rotateX(Math.PI);
+							child.material = new THREE.MeshBasicMaterial({
+								color: "#9bd38d",
+								alphaMap: this.textures.grassAlpha,
+								alphaTest: 0.5,
+								side: THREE.DoubleSide,
+							});
+							this.initialGrassMesh = child;
+						} else {
+							child.visible = false;
 						}
 					}
 				});
 
+				gltf.scene.position.y += 2;
+				this.camera.position.set(-2, 3.5, 2);
+				this.orbitControls.target = new THREE.Vector3(0, 2, 0);
+
+				this.scene.add(this.initialGrassMesh);
 				this.addGrass(terrainMesh, this.grassGeometry);
 			});
 		});
@@ -227,7 +259,7 @@ export class FluffyGrass {
 					child.receiveShadow = true;
 				}
 			});
-			this.scene.add(gltf.scene);
+			// this.scene.add(gltf.scene);
 		});
 	}
 
@@ -295,8 +327,70 @@ export class FluffyGrass {
 	private setupEventListeners() {
 		window.addEventListener("resize", () => this.setAspectResolution(), false);
 
-		this.stats.dom.addEventListener("click", () => {
+		let click = 0;
+		window.addEventListener("click", () => {
 			console.log(this.renderer.info.render);
+			if (click === 0) {
+				const tl = gsap.timeline({
+					onComplete: () => {
+						this.initialGrassMesh.visible = false;
+					},
+				});
+				tl.to(this.orbitControls, {
+					minDistance: 10,
+					autoRotateSpeed: -0.5,
+					duration: 2,
+					ease: "power4.out",
+				});
+				const col = new THREE.Color("#9bd38d");
+				tl.to(
+					this.terrainMat.color,
+					{
+						r: col.r,
+						g: col.g,
+						b: col.b,
+						duration: 2,
+						ease: "power4.out",
+					},
+					0
+				);
+				this.moveGrass();
+			} else if (click === 1) {
+				const col = new THREE.Color("#1f352a");
+				gsap.to(this.grassMaterial.uniforms.tipColor2.value, {
+					r: col.r,
+					g: col.g,
+					b: col.b,
+					duration: 2,
+					ease: "power4.out",
+					// onUpdate: (progress) => {
+					// 	this.grassMaterial.uniforms.tipColor1.value.lerp(col, progress);
+					// },
+				});
+			} else if (click === 2) {
+				const col = new THREE.Color("#313f1b");
+				const tl = gsap.timeline();
+				tl.to(this.grassMaterial.uniforms.baseColor.value, {
+					r: col.r,
+					g: col.g,
+					b: col.b,
+					duration: 2,
+					ease: "power4.out",
+				});
+				const tcol = new THREE.Color("#5e875e");
+				tl.to(
+					this.terrainMat.color,
+					{
+						r: tcol.r,
+						g: tcol.g,
+						b: tcol.b,
+						duration: 2,
+						ease: "power4.out",
+					},
+					0
+				);
+			}
+			click++;
 		});
 
 		// const randomizeGrassColor = document.querySelector(

@@ -20,9 +20,9 @@ export class GrassMaterial {
 	material: THREE.Material;
 
 	private grassColorProps = {
-		baseColor: "#313f1b",
+		baseColor: "#9bd38d",
 		tipColor1: "#9bd38d",
-		tipColor2: "#1f352a",
+		tipColor2: "#9bd38d",
 	};
 
 	uniforms: { [key: string]: { value: any } } = {
